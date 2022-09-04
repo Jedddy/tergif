@@ -9,9 +9,5 @@
 * Run the main.py file<br>
 * Choose your GIF image<br>
 * Watch the animation happen!<br>
+* Star the repository!!!
 
-
-
-[# -- Optional -- #]<br>
-* Star the repository!!!<br>
-[# --          -- #]<br>
