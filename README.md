@@ -1,5 +1,8 @@
 # Terminal-GIF-Player
-
+##### Installation:
+```bash
+git clone https://github.com/Jedddy/Terminal-GIF-Player
+```
 #### Best to run in CMD
 #### You can edit utils.py to your liking. Located at Terminal GIF Player/utils/utils.py
 
