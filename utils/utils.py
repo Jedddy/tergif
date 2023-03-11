@@ -1,92 +1,65 @@
-from PIL import Image
 import os
 import cv2
 from time import sleep
 
+from PIL import Image
+
+
 class ImgToAscii:
     """An Image converter class,
-    
+
     Converts image to ascii characters"""
-    def __init__(self, img_name, size=None):
-        self.img_name = img_name 
+    def __init__(self, image: Image.Image, size: int = 50):
+        self.img = image
         # ASCII chars used for brightness scale. You can change this if you want. 
         # self.ascii_chars = [' ', ' ', '*', '*', '/', '/', '^','$', '$', '#', '#']
         self.ascii_chars = ['  ', '  ',  '--',  '--', '~~', '~~', '++', '++', '==', '==', '==']
-        # Base width for resizing
         self.base_width = size
 
+    def convert_img(self, image: Image.Image) -> Image.Image: 
+        aspect_ratio = image.size[0] / image.size[1]
+        height = aspect_ratio * self.base_width
+        img = image.resize((int(self.base_width), int(height)))
+        return img.convert(mode="L")
 
-    # Resizes Image and converts to grayscale
-    def convert_img(self, img): 
-        self.aspect_ratio = img.size[0] / img.size[1]
-        self.height = self.aspect_ratio * self.base_width
-        self.img = img.resize((int(self.base_width), int(self.height)))
-        return self.img.convert(mode="L")
-
-    # Converts image to ASCII and saves it on a txt file.
-    def process_img(self):
+    def process_img(self) -> str:
         # Opens image and converts to RGBA so images without background would work.
-        with Image.open(self.img_name).convert("RGBA") as image:
-            self.im = self.convert_img(image)
-            self.pixl = self.im.getdata()
+        im = self.convert_img(self.img.convert("RGBA"))
+        pixl = im.getdata()
 
-        self.newpix = [self.ascii_chars[pix//25] for pix in self.pixl]
+        newpix = [self.ascii_chars[pix//25] for pix in pixl]
+        text = ''
+        count = 0
 
-        self.text = ''
-        self.count = 0
+        for i in newpix:
+            text += i
+            count += 1
 
-        for i in self.newpix:
-            self.text += i
-            self.count += 1
-            if self.count == self.base_width:
-                self.text += '\n'
-                self.count = 0
-        
-        with open('converted.txt', 'w') as self.txt:
-            self.txt.write(self.text)
-# End Class
+            if count == self.base_width:
+                text += '\n'
+                count = 0
 
-def clear_folder():
-    """Clears Folders"""
-    try: 
-        for i in os.listdir('frames'):
-            os.remove('frames/' + i)
-    except FileNotFoundError:
-        pass
+        return text + "Press CTRL + C to exit."
 
-def player(gif_path):
+
+def player(gif_path: str):
     os.system('cls')
-    num_frame = 0
     cam = cv2.VideoCapture(f'gifs/{gif_path}')
-    
-    while True:
-        check, frm = cam.read()
-        if check:
-            cv2.imwrite(f'frames/{str(num_frame)}.jpg', frm)
-            num_frame += 1
-        else: 
-            break
-    cam.release()
-    cv2.destroyAllWindows()
+    fps = cam.get(cv2.CAP_PROP_FPS)
 
     try:
-        i = 0
-        lenght = len(os.listdir('frames'))
         while True:
-            img = ImgToAscii(f"frames/{i}.jpg", size=50) # Edit the size to your liking.
-            img.process_img()
-            with open('converted.txt', 'r') as imgs:
-                imgs = imgs.read()
-                print(imgs + '\nPress CTRL + C to exit.', end='\r', flush=True)
-                sleep(lenght/(lenght*30)) # Speed of the animation, lower == faster animation.
-            i += 1
-            if i == lenght:
-                i = 0
+            check, frm = cam.read()
+
+            if check:
+                img = ImgToAscii(Image.fromarray(frm))
+                print(img.process_img(), end="\r")
+                sleep(fps/(fps*60))  # This is bs I HAVE NO IDEA WHAT TO DO HERE fk framerates
+            else: 
+                cam = cv2.VideoCapture(f'gifs/{gif_path}')
+
     except KeyboardInterrupt:
-        os.system('cls')
-        t = lenght//20
-        print(f'Terminating...\nPlease wait for {t} seconds.')
-        sleep(t)
-        clear_folder()
-        print('Program done.')
-    
+        os.system("cls" if os.name == "nt" else "clear")
+        print("Quitting...")
+        cam.release()
+        cv2.destroyAllWindows()
